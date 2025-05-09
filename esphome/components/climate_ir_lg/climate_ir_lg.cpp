@@ -153,6 +153,9 @@ bool LgIrClimate::on_receive(remote_base::RemoteReceiveData data) {
       case COMMAND_ON_HEAT:
         this->mode = climate::CLIMATE_MODE_HEAT;
         break;
+      case COMMAND_SWING
+        this->mode = climate::CLIMATE_SWING;
+        break;
       case COMMAND_COOL:
       case COMMAND_ON_COOL:
       default:

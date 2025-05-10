@@ -17,7 +17,7 @@ class LgIrClimate : public climate_ir::ClimateIR {
       : climate_ir::ClimateIR(TEMP_MIN, TEMP_MAX, 1.0f, true, true,
                               {climate::CLIMATE_FAN_AUTO, climate::CLIMATE_FAN_LOW, climate::CLIMATE_FAN_MEDIUM,
                                climate::CLIMATE_FAN_HIGH},
-                              {climate::CLIMATE_SWING_OFF, climate::CLIMATE_SWING_VERTICAL}) {}
+                              {climate::CLIMATE_SWING_OFF, climate::CLIMATE_SWING_VERTICAL_AUTO}) {}
 
   /// Override control to change settings of the climate device.
   void control(const climate::ClimateCall &call) override {

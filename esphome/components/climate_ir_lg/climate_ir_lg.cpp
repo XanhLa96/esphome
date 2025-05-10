@@ -9,13 +9,15 @@ static const char *const TAG = "climate.climate_ir_lg";
 // Commands
 const uint32_t COMMAND_MASK = 0xFF000;
 const uint32_t COMMAND_OFF = 0xC0000;
-const uint32_t COMMAND_SWING = 0x10000;
+// commands swing
+const uint32_t SWING_MASK = 0xFFFF0;
+const uint32_t COMMAND_SWING = 0x8813;
 
 const uint32_t COMMAND_ON_COOL = 0x00000;
 const uint32_t COMMAND_ON_DRY = 0x01000;
 const uint32_t COMMAND_ON_FAN_ONLY = 0x02000;
 const uint32_t COMMAND_ON_AI = 0x03000;
-const uint32_t COMMAND_ON_HEAT = 0x04000;
+// const uint32_t COMMAND_ON_HEAT = 0x04000;
 
 const uint32_t COMMAND_COOL = 0x08000;
 const uint32_t COMMAND_DRY = 0x09000;
@@ -25,10 +27,10 @@ const uint32_t COMMAND_HEAT = 0x0C000;
 
 // Fan speed
 const uint32_t FAN_MASK = 0xF0;
-const uint32_t FAN_AUTO = 0x50;
-const uint32_t FAN_MIN = 0x00;
-const uint32_t FAN_MED = 0x20;
-const uint32_t FAN_MAX = 0x40;
+const uint32_t FAN_AUTO = 0x5C;
+const uint32_t FAN_MIN = 0x07;
+const uint32_t FAN_MED = 0x29;
+const uint32_t FAN_MAX = 0x4B;
 
 // Temperature
 const uint8_t TEMP_RANGE = TEMP_MAX - TEMP_MIN + 1;
@@ -61,9 +63,8 @@ void LgIrClimate::transmit_state() {
       case climate::CLIMATE_MODE_HEAT_COOL:
         remote_state |= climate_is_off ? COMMAND_ON_AI : COMMAND_AI;
         break;
-      case climate::CLIMATE_MODE_HEAT:
-        remote_state |= climate_is_off ? COMMAND_ON_HEAT : COMMAND_HEAT;
-        break;
+      //case climate::CLIMATE_MODE_HEAT:
+      //  break;
       case climate::CLIMATE_MODE_OFF:
       default:
         remote_state |= COMMAND_OFF;
@@ -97,7 +98,7 @@ void LgIrClimate::transmit_state() {
   }
 
   // Set temperature
-  if (this->mode == climate::CLIMATE_MODE_COOL || this->mode == climate::CLIMATE_MODE_HEAT) {
+  if (this->mode == climate::CLIMATE_MODE_COOL ) {
     auto temp = (uint8_t) roundf(clamp<float>(this->target_temperature, TEMP_MIN, TEMP_MAX));
     remote_state |= ((temp - 15) << TEMP_SHIFT);
   }
@@ -132,9 +133,9 @@ bool LgIrClimate::on_receive(remote_base::RemoteReceiveData data) {
   // Get command
   if ((remote_state & COMMAND_MASK) == COMMAND_OFF) {
     this->mode = climate::CLIMATE_MODE_OFF;
-  } else if ((remote_state & COMMAND_MASK) == COMMAND_SWING) {
+  } else if ((remote_state & SWING_MASK) == COMMAND_SWING) {
     this->swing_mode =
-        this->swing_mode == climate::CLIMATE_SWING_OFF ? climate::CLIMATE_SWING_VERTICAL : climate::CLIMATE_SWING_OFF;
+        this->swing_mode == climate::CLIMATE_SWING_OFF ? climate::CLIMATE_SWING_VERTICAL_AUTO : climate::CLIMATE_SWING_OFF;
   } else {
     switch (remote_state & COMMAND_MASK) {
       case COMMAND_DRY:
@@ -149,10 +150,10 @@ bool LgIrClimate::on_receive(remote_base::RemoteReceiveData data) {
       case COMMAND_ON_AI:
         this->mode = climate::CLIMATE_MODE_HEAT_COOL;
         break;
-      case COMMAND_HEAT:
-      case COMMAND_ON_HEAT:
-        this->mode = climate::CLIMATE_MODE_HEAT;
-        break;
+     // case COMMAND_HEAT:
+     // case COMMAND_ON_HEAT:
+     //   this->mode = climate::CLIMATE_MODE_HEAT;
+     //  break;
       case COMMAND_COOL:
       case COMMAND_ON_COOL:
       default:
@@ -164,7 +165,7 @@ bool LgIrClimate::on_receive(remote_base::RemoteReceiveData data) {
     if (this->mode == climate::CLIMATE_MODE_HEAT_COOL) {
       this->fan_mode = climate::CLIMATE_FAN_AUTO;
     } else if (this->mode == climate::CLIMATE_MODE_COOL || this->mode == climate::CLIMATE_MODE_DRY ||
-               this->mode == climate::CLIMATE_MODE_FAN_ONLY || this->mode == climate::CLIMATE_MODE_HEAT) {
+               this->mode == climate::CLIMATE_MODE_FAN_ONLY ) {
       if ((remote_state & FAN_MASK) == FAN_AUTO) {
         this->fan_mode = climate::CLIMATE_FAN_AUTO;
       } else if ((remote_state & FAN_MASK) == FAN_MIN) {
@@ -177,7 +178,7 @@ bool LgIrClimate::on_receive(remote_base::RemoteReceiveData data) {
     }
 
     // Get temperature
-    if (this->mode == climate::CLIMATE_MODE_COOL || this->mode == climate::CLIMATE_MODE_HEAT) {
+    if (this->mode == climate::CLIMATE_MODE_COOL) {
       this->target_temperature = ((remote_state & TEMP_MASK) >> TEMP_SHIFT) + 15;
     }
   }
